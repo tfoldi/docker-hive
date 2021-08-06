@@ -1,22 +1,31 @@
 FROM openjdk:8u212-jre
 
+ARG HADOOP_VERSION=3.3.1
+ARG HIVE_VERSION=3.1.2
+ARG SPARK_VERSION=3.1.2
+
 WORKDIR /opt
 
-ENV HADOOP_HOME=/opt/hadoop-3.1.3
-ENV HIVE_HOME=/opt/apache-hive-3.1.2-bin
-# Include additional jars
-ENV HADOOP_CLASSPATH=${HADOOP_HOME}/share/hadoop/tools/lib/aws-java-sdk-bundle-1.11.271.jar:${HADOOP_HOME}/share/hadoop/tools/lib/hadoop-aws-3.1.3.jar
 
-RUN curl -L https://www-us.apache.org/dist/hive/hive-3.1.2/apache-hive-3.1.2-bin.tar.gz | tar zxf - && \
-    curl -L https://www-us.apache.org/dist/hadoop/common/hadoop-3.1.3/hadoop-3.1.3.tar.gz | tar zxf - && \
-    rm -f ${HIVE_HOME}/lib/guava-19.0.jar && \
-    cp ${HADOOP_HOME}/share/hadoop/common/lib/guava-27.0-jre.jar ${HIVE_HOME}/lib/
+ENV HADOOP_HOME=/opt/hadoop-${HADOOP_VERSION}
+ENV HIVE_HOME=/opt/apache-hive-${HIVE_VERSION}-bin
+ENV SPARK_HOME=/opt/spark-${SPARK_VERSION}
+# Include additional jars
+ENV HADOOP_CLASSPATH=${HADOOP_HOME}/share/hadoop/tools/lib/aws-java-sdk-bundle-1.11.271.jar:${HADOOP_HOME}/share/hadoop/tools/lib/hadoop-aws-${HADOOP_VERSION}.jar
+
+RUN curl -L https://mirrors.ocf.berkeley.edu/apache/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz | tar zxf - && \
+    curl -L https://downloads.apache.org/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz | tar zxf - && \
+    curl -L https://downloads.apache.org/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-without-hadoop.tgz | tar zxf - && \
+    rm -f ${HIVE_HOME}/lib/guava-*jar && \
+    cp ${HADOOP_HOME}/share/hadoop/common/lib/guava-*jar ${HIVE_HOME}/lib/
 
 COPY conf/hive-site.xml ${HIVE_HOME}/conf
 
 RUN groupadd -r hive --gid=1000 && \
     useradd -r -g hive --uid=1000 -d ${HIVE_HOME} hive && \
-    chown hive:hive -R ${HIVE_HOME}
+    chown hive:hive -R ${HIVE_HOME} && \
+    apt update && \
+    apt install -y procps net-tools vim
 
 USER hive
 WORKDIR $HIVE_HOME
@@ -24,3 +33,5 @@ EXPOSE 9083
 
 ENTRYPOINT ["bin/hive"]
 CMD ["--service", "metastore"]
+
+#./hive --service hiveserver2 --hiveconf hive.server2.thrift.port=10000 --hiveconf hive.root.logger=INFO,console --hiveconf hive.execution.engine=tez

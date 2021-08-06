@@ -1,9 +1,9 @@
-# Hive Metastore
+# Hive Server
+
+Pretty dope HiveServer2 on Hadoop 3.x and Spark 3.x.
 
 ## Build
 
-CD is run through DockerHub in [this repo](https://cloud.docker.com/repository/docker/meneal/docker-hive/general).
-
 ```SHELL
-docker build -t "IBM/hive-metastore:master" .
+docker build -t docker-hive .
 ```

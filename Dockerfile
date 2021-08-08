@@ -9,13 +9,13 @@ WORKDIR /opt
 
 ENV HADOOP_HOME=/opt/hadoop-${HADOOP_VERSION}
 ENV HIVE_HOME=/opt/apache-hive-${HIVE_VERSION}-bin
-ENV SPARK_HOME=/opt/spark-${SPARK_VERSION}
-# Include additional jars
-ENV HADOOP_CLASSPATH=${HADOOP_HOME}/share/hadoop/tools/lib/aws-java-sdk-bundle-1.11.271.jar:${HADOOP_HOME}/share/hadoop/tools/lib/hadoop-aws-${HADOOP_VERSION}.jar
+ENV SPARK_HOME=/opt/spark-${SPARK_VERSION}-bin-hadoop3.2
+
+ENV HADOOP_CLASSPATH=${HADOOP_HOME}/share/hadoop/tools/lib/aws-java-sdk-bundle-1.11.901.jar:${HADOOP_HOME}/share/hadoop/tools/lib/hadoop-aws-${HADOOP_VERSION}.jar
 
 RUN curl -L https://mirrors.ocf.berkeley.edu/apache/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz | tar zxf - && \
+    curl -L https://downloads.apache.org/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop3.2.tgz | tar zxf - && \
     curl -L https://downloads.apache.org/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz | tar zxf - && \
-    curl -L https://downloads.apache.org/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-without-hadoop.tgz | tar zxf - && \
     rm -f ${HIVE_HOME}/lib/guava-*jar && \
     cp ${HADOOP_HOME}/share/hadoop/common/lib/guava-*jar ${HIVE_HOME}/lib/
 
@@ -27,11 +27,13 @@ RUN groupadd -r hive --gid=1000 && \
     apt update && \
     apt install -y procps net-tools vim
 
-USER hive
+#USER hive
 WORKDIR $HIVE_HOME
 EXPOSE 9083
 
 ENTRYPOINT ["bin/hive"]
 CMD ["--service", "metastore"]
 
-#./hive --service hiveserver2 --hiveconf hive.server2.thrift.port=10000 --hiveconf hive.root.logger=INFO,console --hiveconf hive.execution.engine=tez
+#./hive --service hiveserver2 --hiveconf hive.server2.thrift.port=10000 --hiveconf hive.root.logger=INFO,console --hiveconf hive.execution.engine=spark
+
+# export SPARK_DIST_CLASSPATH=$(/opt/hadoop-3.3.1/bin/hadoop classpath)
